@@ -1,0 +1,26 @@
+name = "pipe-cfd-worker"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+
+# Cloudflare KV for storing .vtp & metrics.json results (Free tier: 1 GB, no card required)
+[[kv_namespaces]]
+binding = "RESULTS_KV"
+id = "4e21dd4680e14fbaa9055b4b60c20bcc"
+
+# Cloudflare KV for lightweight per-IP rate limiting (Free tier: 100k reads/day)
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "881e01edca014d0c8236b3c61688a937"
+
+# Optional: Upgrade storage to Cloudflare R2 (10 GB free + $0 egress) once enabled in Dashboard:
+#   1. Enable R2 at https://dash.cloudflare.com/a9bfa6edfcf665d10fd37bca9d176a36/r2/overview
+#   2. Run: wrangler r2 bucket create pipe-cfd-results
+#   3. Uncomment below and re-run: wrangler deploy
+# [[r2_buckets]]
+# binding = "RESULTS_BUCKET"
+# bucket_name = "pipe-cfd-results"
+
+[vars]
+ALLOWED_ORIGIN = "*"
+MAX_RUNS_PER_IP_PER_HOUR = "8"
+ENABLE_TURNSTILE = "false"

@@ -1,0 +1,10 @@
+{
+  "name": "pipe-cfd-cloud",
+  "compatibility_date": "2026-11-18",
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": "./dist"
+  }
+}
