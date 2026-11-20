@@ -1,8 +1,11 @@
 import React from 'react';
-import { Play, Sliders, Eye, Sparkles, Droplets } from 'lucide-react';
+import { Play, Sliders, Eye, Sparkles, Droplets, Globe } from 'lucide-react';
+import { TRANSLATIONS, type Lang } from '../i18n';
 import type { ColorMapPreset, FieldName, PipeParams, ViewSettings } from '../types';
 
 interface ControlPanelProps {
+  lang: Lang;
+  onToggleLang: () => void;
   params: PipeParams;
   onParamsChange: (p: PipeParams) => void;
   view: ViewSettings;
@@ -12,13 +15,15 @@ interface ControlPanelProps {
 }
 
 const FLUID_PRESETS = [
-  { name: '水 (20°C)', nu: 1.0e-6, rho: 998.2 },
-  { name: '空气 (20°C)', nu: 1.5e-5, rho: 1.2 },
-  { name: '轻质机油', nu: 5.0e-5, rho: 860.0 },
-  { name: '高粘润滑油', nu: 2.0e-4, rho: 890.0 },
+  { key: 'water' as const, nu: 1.0e-6, rho: 998.2 },
+  { key: 'air' as const, nu: 1.5e-5, rho: 1.2 },
+  { key: 'lightOil' as const, nu: 5.0e-5, rho: 860.0 },
+  { key: 'heavyOil' as const, nu: 2.0e-4, rho: 890.0 },
 ];
 
 export const ControlPanel: React.FC<ControlPanelProps> = ({
+  lang,
+  onToggleLang,
   params,
   onParamsChange,
   view,
@@ -26,23 +31,35 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   onRun,
   loading,
 }) => {
+  const t = TRANSLATIONS[lang];
   const reEst =
     (params.velocity_ms * (params.diameter_mm * 1e-3)) / params.viscosity_m2s;
-  const regimeLabel = reEst >= 2300 ? '湍流 (k-ω SST)' : '层流 (Laminar)';
+  const regimeLabel = reEst >= 2300 ? t.regimeTurb : t.regimeLam;
 
   return (
     <aside className="sidebar">
       <div className="brand">
-        <div className="brand-badge">CF + Modal + OpenFOAM</div>
+        <div className="brand-top-row">
+          <div className="brand-badge">CF + Modal + OpenFOAM</div>
+          <button
+            type="button"
+            className="lang-toggle"
+            onClick={onToggleLang}
+            title={lang === 'zh' ? 'Switch to English' : '切换为中文'}
+          >
+            <Globe size={12} />
+            <span>{lang === 'zh' ? 'EN' : '中文'}</span>
+          </button>
+        </div>
         <h1>PipeCFD Cloud</h1>
-        <p>浏览器里的 3D 管道云仿真实验室</p>
+        <p>{t.subtitle}</p>
       </div>
 
       {/* Section 1: Fluid & Geometry Parameters */}
       <section className="panel-section">
         <div className="section-title">
           <Sliders size={15} />
-          <span>管道几何与工况参数</span>
+          <span>{t.sectionParams}</span>
         </div>
 
         <div className="fluid-pills">
@@ -52,7 +69,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               Math.abs(params.density_kgm3 - f.rho) < 5;
             return (
               <button
-                key={f.name}
+                key={f.key}
                 type="button"
                 className={`pill ${active ? 'active' : ''}`}
                 onClick={() =>
@@ -63,7 +80,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                   })
                 }
               >
-                <Droplets size={12} /> {f.name}
+                <Droplets size={12} /> {t.fluids[f.key]}
               </button>
             );
           })}
@@ -71,7 +88,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
         <label className="slider-row">
           <div className="slider-header">
-            <span>管道内径 D</span>
+            <span>{t.diameter}</span>
             <strong>{params.diameter_mm.toFixed(0)} mm</strong>
           </div>
           <input
@@ -88,7 +105,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
         <label className="slider-row">
           <div className="slider-header">
-            <span>入口流速 U</span>
+            <span>{t.velocity}</span>
             <strong>{params.velocity_ms.toFixed(1)} m/s</strong>
           </div>
           <input
@@ -105,7 +122,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
         <label className="slider-row">
           <div className="slider-header">
-            <span>弯头角度 θ</span>
+            <span>{t.bendAngle}</span>
             <strong>{params.bend_angle_deg.toFixed(0)}°</strong>
           </div>
           <input
@@ -122,7 +139,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
         <label className="slider-row">
           <div className="slider-header">
-            <span>运动粘度 ν</span>
+            <span>{t.viscosity}</span>
             <strong>{params.viscosity_m2s.toExponential(1)} m²/s</strong>
           </div>
           <input
@@ -143,7 +160,9 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         </label>
 
         <div className="re-preview">
-          <span>预估雷诺数 Re = {reEst.toFixed(0)}</span>
+          <span>
+            {t.reEstimate} {reEst.toFixed(0)}
+          </span>
           <span className={`tag ${reEst >= 2300 ? 'turb' : 'lam'}`}>
             {regimeLabel}
           </span>
@@ -156,7 +175,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           onClick={onRun}
         >
           <Play size={16} />
-          {loading ? 'OpenFOAM 求解中...' : 'Run Cloud OpenFOAM'}
+          {loading ? t.runningBtn : t.runBtn}
         </button>
       </section>
 
@@ -164,7 +183,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
       <section className="panel-section">
         <div className="section-title">
           <Eye size={15} />
-          <span>VTK.js 3D 流场后处理</span>
+          <span>{t.sectionPost}</span>
         </div>
 
         <div className="segmented">
@@ -175,13 +194,13 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               className={view.field === f ? 'active' : ''}
               onClick={() => onViewChange({ ...view, field: f })}
             >
-              {f === 'U_mag' ? '速度云图 |U|' : '压力云图 p'}
+              {f === 'U_mag' ? t.fieldVelocity : t.fieldPressure}
             </button>
           ))}
         </div>
 
         <label className="select-row">
-          <span>色阶配色 (Colormap)</span>
+          <span>{t.colormapLabel}</span>
           <select
             value={view.colorMap}
             onChange={(e) =>
@@ -191,10 +210,10 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               })
             }
           >
-            <option value="Turbo">Turbo (现代彩虹)</option>
-            <option value="Cool to Warm">Cool to Warm (ParaView 经典)</option>
-            <option value="Viridis">Viridis (感知均匀)</option>
-            <option value="Plasma">Plasma (高对比度)</option>
+            <option value="Turbo">{t.colormaps.Turbo}</option>
+            <option value="Cool to Warm">{t.colormaps['Cool to Warm']}</option>
+            <option value="Viridis">{t.colormaps.Viridis}</option>
+            <option value="Plasma">{t.colormaps.Plasma}</option>
           </select>
         </label>
 
@@ -207,7 +226,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 onViewChange({ ...view, showWall: e.target.checked })
               }
             />
-            <span>3D 管壁云图</span>
+            <span>{t.toggleWall}</span>
           </label>
           <label className="checkbox-row">
             <input
@@ -217,7 +236,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 onViewChange({ ...view, showSlice: e.target.checked })
               }
             />
-            <span>中心对称切片</span>
+            <span>{t.toggleSlice}</span>
           </label>
           <label className="checkbox-row">
             <input
@@ -227,7 +246,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 onViewChange({ ...view, showVectors: e.target.checked })
               }
             />
-            <span>3D 速度矢量箭头</span>
+            <span>{t.toggleVectors}</span>
           </label>
           <label className="checkbox-row">
             <input
@@ -237,13 +256,13 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 onViewChange({ ...view, wireframe: e.target.checked })
               }
             />
-            <span>管壁网格线框</span>
+            <span>{t.toggleWireframe}</span>
           </label>
         </div>
 
         <label className="slider-row">
           <div className="slider-header">
-            <span>管壁透明度</span>
+            <span>{t.wallOpacity}</span>
             <strong>{Math.round(view.wallOpacity * 100)}%</strong>
           </div>
           <input
@@ -260,7 +279,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
         <label className="slider-row">
           <div className="slider-header">
-            <span>矢量箭头缩放</span>
+            <span>{t.vectorScale}</span>
             <strong>{view.vectorScale.toFixed(1)}×</strong>
           </div>
           <input
@@ -278,7 +297,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
       <div className="sidebar-footer">
         <Sparkles size={13} />
-        <span>已算参数自动命中 Cloudflare R2 零流量缓存</span>
+        <span>{t.sidebarFooter}</span>
       </div>
     </aside>
   );

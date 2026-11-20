@@ -11,6 +11,7 @@ import {
 import { fetchCachedCases, runSimulation } from './api';
 import { ControlPanel } from './components/ControlPanel';
 import { VtkPipeViewer } from './components/VtkPipeViewer';
+import { detectInitialLang, TRANSLATIONS, type Lang } from './i18n';
 import type {
   PipeParams,
   SimulationMetrics,
@@ -38,12 +39,27 @@ const DEFAULT_VIEW: ViewSettings = {
 };
 
 export const App: React.FC = () => {
+  const [lang, setLang] = useState<Lang>(detectInitialLang);
   const [params, setParams] = useState<PipeParams>(DEFAULT_PARAMS);
   const [view, setView] = useState<ViewSettings>(DEFAULT_VIEW);
   const [result, setResult] = useState<SimulationResponse | null>(null);
   const [cachedList, setCachedList] = useState<SimulationMetrics[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+
+  const t = TRANSLATIONS[lang];
+
+  useEffect(() => {
+    document.title = t.pageTitle;
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    try {
+      localStorage.setItem('pipecfd_lang', lang);
+    } catch {
+      // Ignore storage errors
+    }
+  }, [lang, t.pageTitle]);
+
+  const toggleLang = () => setLang((prev) => (prev === 'zh' ? 'en' : 'zh'));
 
   const handleRun = async (overrideParams?: PipeParams) => {
     const target = overrideParams ?? params;
@@ -62,7 +78,6 @@ export const App: React.FC = () => {
     }
   };
 
-  // Load any precomputed / cached cases on startup so visitors see instant 3D CFD
   useEffect(() => {
     (async () => {
       try {
@@ -74,7 +89,7 @@ export const App: React.FC = () => {
           setResult({
             status: 'ok',
             cached: true,
-            backend: 'cloudflare-r2-cache',
+            backend: 'cloudflare-kv-cache',
             case_key: first.case_key,
             metrics: first,
             urls: {
@@ -97,6 +112,8 @@ export const App: React.FC = () => {
   return (
     <div className="app-layout">
       <ControlPanel
+        lang={lang}
+        onToggleLang={toggleLang}
         params={params}
         onParamsChange={setParams}
         view={view}
@@ -110,7 +127,7 @@ export const App: React.FC = () => {
         <header className="kpi-bar">
           <div className="kpi-card">
             <div className="kpi-label">
-              <Gauge size={14} /> 进出口压降 ΔP
+              <Gauge size={14} /> {t.kpiPressureDrop}
             </div>
             <div className="kpi-value">
               {kpis ? `${kpis.pressure_drop_pa.toFixed(1)} Pa` : '--'}
@@ -119,7 +136,7 @@ export const App: React.FC = () => {
 
           <div className="kpi-card">
             <div className="kpi-label">
-              <Activity size={14} /> 雷诺数 Re / 局部阻力 K
+              <Activity size={14} /> {t.kpiReynolds}
             </div>
             <div className="kpi-value">
               {kpis
@@ -130,7 +147,7 @@ export const App: React.FC = () => {
 
           <div className="kpi-card">
             <div className="kpi-label">
-              <Wind size={14} /> 峰值流速 U_max
+              <Wind size={14} /> {t.kpiMaxVel}
             </div>
             <div className="kpi-value">
               {kpis ? `${kpis.max_velocity_ms.toFixed(2)} m/s` : '--'}
@@ -139,7 +156,7 @@ export const App: React.FC = () => {
 
           <div className="kpi-card">
             <div className="kpi-label">
-              <Cpu size={14} /> 网格 / 求解迭代
+              <Cpu size={14} /> {t.kpiMesh}
             </div>
             <div className="kpi-value">
               {kpis ? `${kpis.n_cells.toLocaleString()} cells · ${kpis.iterations} it` : '--'}
@@ -149,12 +166,12 @@ export const App: React.FC = () => {
           <div className="kpi-card">
             <div className="kpi-label">
               {result?.cached ? <Database size={14} /> : <Timer size={14} />}
-              {result?.cached ? 'R2 缓存秒开' : 'OpenFOAM 耗时'}
+              {result?.cached ? t.kpiCacheHit : t.kpiSolveTime}
             </div>
             <div className={`kpi-value ${result?.cached ? 'accent-green' : 'accent-sky'}`}>
               {result
                 ? result.cached
-                  ? `HIT (${timing?.total.toFixed(1)}s 原耗时)`
+                  ? t.hitLabel(timing?.total.toFixed(1) ?? '0.0')
                   : `${timing?.total.toFixed(1)} s`
                 : '--'}
             </div>
@@ -170,14 +187,14 @@ export const App: React.FC = () => {
 
         {/* Main VTK.js 3D Viewport */}
         <div className="viewer-wrapper">
-          <VtkPipeViewer result={result} view={view} loading={loading} />
+          <VtkPipeViewer lang={lang} result={result} view={view} loading={loading} />
         </div>
 
         {/* Bottom Cached Presets Strip */}
         {cachedList.length > 0 && (
           <footer className="presets-strip">
             <span className="strip-label">
-              <Database size={13} /> 已缓存算例 (0ms 秒开):
+              <Database size={13} /> {t.cachedStripLabel}
             </span>
             <div className="strip-items">
               {cachedList.map((item) => {

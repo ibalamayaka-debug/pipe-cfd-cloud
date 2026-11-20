@@ -14,9 +14,11 @@ import vtkOrientationMarkerWidget from '@kitware/vtk.js/Interaction/Widgets/Orie
 import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor';
 import { Compass, RotateCcw, Box, Layers } from 'lucide-react';
 import { fetchBinary } from '../api';
+import { TRANSLATIONS, type Lang } from '../i18n';
 import type { ColorMapPreset, SimulationResponse, ViewSettings } from '../types';
 
 interface VtkPipeViewerProps {
+  lang: Lang;
   result: SimulationResponse | null;
   view: ViewSettings;
   loading: boolean;
@@ -64,10 +66,14 @@ interface VtkSceneHandle {
 }
 
 export const VtkPipeViewer: React.FC<VtkPipeViewerProps> = ({
+  lang,
   result,
   view,
   loading,
 }) => {
+  const t = TRANSLATIONS[lang];
+  const langRef = useRef<Lang>(lang);
+  langRef.current = lang;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const sceneRef = useRef<VtkSceneHandle | null>(null);
   const viewRef = useRef<ViewSettings>(view);
@@ -313,7 +319,7 @@ export const VtkPipeViewer: React.FC<VtkPipeViewerProps> = ({
     let cancelled = false;
 
     const loadAll = async () => {
-      setMeshStatus('正在加载 3D 流场 (.vtp)...');
+      setMeshStatus(TRANSLATIONS[langRef.current].loadingVtp);
       try {
         const [wallBuf, sliceBuf, vecBuf] = await Promise.all([
           fetchBinary(result.urls.wall),
@@ -344,7 +350,7 @@ export const VtkPipeViewer: React.FC<VtkPipeViewerProps> = ({
         setMeshStatus('');
       } catch (err) {
         if (!cancelled) {
-          setMeshStatus(`加载 3D 数据失败: ${(err as Error).message}`);
+          setMeshStatus(`${TRANSLATIONS[langRef.current].loadVtpError} ${(err as Error).message}`);
         }
       }
     };
@@ -363,7 +369,7 @@ export const VtkPipeViewer: React.FC<VtkPipeViewerProps> = ({
   }, [result, view, applyViewToScene]);
 
   const unit = view.field === 'p_Pa' ? 'Pa' : 'm/s';
-  const fieldLabel = view.field === 'p_Pa' ? '相对静压 p' : '速度幅值 |U|';
+  const fieldLabel = view.field === 'p_Pa' ? t.colorbarPressure : t.colorbarVelocity;
   const midVal = 0.5 * (scalarRange[0] + scalarRange[1]);
 
   return (
@@ -372,17 +378,17 @@ export const VtkPipeViewer: React.FC<VtkPipeViewerProps> = ({
 
       {/* Top-left camera toolbar */}
       <div className="viewer-toolbar">
-        <button onClick={() => setCameraPreset('iso')} title="3D 等轴测视角">
-          <Box size={14} /> 3D ISO
+        <button onClick={() => setCameraPreset('iso')} title={t.camIsoTip}>
+          <Box size={14} /> {t.camIso}
         </button>
-        <button onClick={() => setCameraPreset('xy')} title="XY 弯管主平面">
-          <Layers size={14} /> XY 平面
+        <button onClick={() => setCameraPreset('xy')} title={t.camXYTip}>
+          <Layers size={14} /> {t.camXY}
         </button>
-        <button onClick={() => setCameraPreset('xz')} title="XZ 侧视图">
-          <Compass size={14} /> XZ 侧视
+        <button onClick={() => setCameraPreset('xz')} title={t.camXZTip}>
+          <Compass size={14} /> {t.camXZ}
         </button>
-        <button onClick={() => setCameraPreset('iso')} title="重置相机">
-          <RotateCcw size={14} /> 重置
+        <button onClick={() => setCameraPreset('iso')} title={t.camResetTip}>
+          <RotateCcw size={14} /> {t.camReset}
         </button>
       </div>
 
@@ -406,7 +412,7 @@ export const VtkPipeViewer: React.FC<VtkPipeViewerProps> = ({
       )}
 
       {/* Interaction hint */}
-      <div className="viewer-hint">左键 360° 旋转 · 滚轮缩放 · Shift+左键平移</div>
+      <div className="viewer-hint">{t.viewerHint}</div>
 
       {/* Loading / empty overlay */}
       {(loading || meshStatus || !result) && (
@@ -414,8 +420,8 @@ export const VtkPipeViewer: React.FC<VtkPipeViewerProps> = ({
           {loading ? (
             <div className="spinner-card">
               <div className="spinner" />
-              <h3>正在运行云端 OpenFOAM 求解器...</h3>
-              <p>blockMesh O-Grid 网格划分 → simpleFoam 迭代收敛 → VTK 流场抽取</p>
+              <h3>{t.loadingTitle}</h3>
+              <p>{t.loadingDesc}</p>
             </div>
           ) : meshStatus ? (
             <div className="spinner-card">
@@ -424,8 +430,8 @@ export const VtkPipeViewer: React.FC<VtkPipeViewerProps> = ({
             </div>
           ) : (
             <div className="spinner-card">
-              <h3>调整左侧管道参数并点击“运行云仿真”</h3>
-              <p>基于真实 OpenFOAM 3D 求解 + VTK.js WebGL 渲染</p>
+              <h3>{t.emptyTitle}</h3>
+              <p>{t.emptyDesc}</p>
             </div>
           )}
         </div>
