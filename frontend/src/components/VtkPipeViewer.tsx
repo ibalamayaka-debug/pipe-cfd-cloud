@@ -159,7 +159,7 @@ export const VtkPipeViewer: React.FC<VtkPipeViewerProps> = ({
     let disposed = false;
 
     const genericRW = vtkGenericRenderWindow.newInstance({
-      background: [0.045, 0.062, 0.098],
+      background: [0.105, 0.082, 0.066],
     });
     genericRW.setContainer(el);
     genericRW.resize();
@@ -242,11 +242,11 @@ export const VtkPipeViewer: React.FC<VtkPipeViewerProps> = ({
         text: '+X',
         fontStyle: 'bold',
         fontFamily: 'Inter, system-ui, sans-serif',
-        fontColor: '#f8fafc',
+        fontColor: '#fdf6ee',
         fontSizeScale: (res: number) => res / 2.2,
-        faceColor: '#1e293b',
+        faceColor: '#2a2019',
         edgeThickness: 0.12,
-        edgeColor: '#38bdf8',
+        edgeColor: '#f59e0b',
         resolution: 256,
       });
       cube.setXPlusFaceProperty({ text: '+X' });

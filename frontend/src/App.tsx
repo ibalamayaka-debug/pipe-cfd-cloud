@@ -4,6 +4,8 @@ import {
   Cpu,
   Database,
   Gauge,
+  PanelLeftClose,
+  PanelLeftOpen,
   Timer,
   Wind,
   AlertCircle,
@@ -40,6 +42,7 @@ const DEFAULT_VIEW: ViewSettings = {
 
 export const App: React.FC = () => {
   const [lang, setLang] = useState<Lang>(detectInitialLang);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [params, setParams] = useState<PipeParams>(DEFAULT_PARAMS);
   const [view, setView] = useState<ViewSettings>(DEFAULT_VIEW);
   const [result, setResult] = useState<SimulationResponse | null>(null);
@@ -108,7 +111,7 @@ export const App: React.FC = () => {
   const timing = result?.metrics.timing_sec;
 
   return (
-    <div className="app-layout">
+    <div className={`app-layout ${sidebarOpen ? '' : 'sidebar-collapsed'}`}>
       <ControlPanel
         lang={lang}
         onSetLang={setLang}
@@ -123,55 +126,65 @@ export const App: React.FC = () => {
       <main className="workspace">
         {/* Top KPI Metrics Bar */}
         <header className="kpi-bar">
-          <div className="kpi-card">
-            <div className="kpi-label">
-              <Gauge size={14} /> {t.kpiPressureDrop}
+          <button
+            type="button"
+            className="collapse-btn"
+            onClick={() => setSidebarOpen((v) => !v)}
+            title={sidebarOpen ? (lang === 'zh' ? '收起侧边栏' : 'Hide sidebar') : (lang === 'zh' ? '展开侧边栏' : 'Show sidebar')}
+          >
+            {sidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+          </button>
+          <div className="kpi-grid">
+            <div className="kpi-card">
+              <div className="kpi-label">
+                <Gauge size={14} /> {t.kpiPressureDrop}
+              </div>
+              <div className="kpi-value">
+                {kpis ? `${kpis.pressure_drop_pa.toFixed(1)} Pa` : '--'}
+              </div>
             </div>
-            <div className="kpi-value">
-              {kpis ? `${kpis.pressure_drop_pa.toFixed(1)} Pa` : '--'}
-            </div>
-          </div>
 
-          <div className="kpi-card">
-            <div className="kpi-label">
-              <Activity size={14} /> {t.kpiReynolds}
+            <div className="kpi-card">
+              <div className="kpi-label">
+                <Activity size={14} /> {t.kpiReynolds}
+              </div>
+              <div className="kpi-value">
+                {kpis
+                  ? `${kpis.reynolds_number.toLocaleString()} · K=${kpis.loss_coefficient_k.toFixed(2)}`
+                  : '--'}
+              </div>
             </div>
-            <div className="kpi-value">
-              {kpis
-                ? `${kpis.reynolds_number.toLocaleString()} · K=${kpis.loss_coefficient_k.toFixed(2)}`
-                : '--'}
-            </div>
-          </div>
 
-          <div className="kpi-card">
-            <div className="kpi-label">
-              <Wind size={14} /> {t.kpiMaxVel}
+            <div className="kpi-card">
+              <div className="kpi-label">
+                <Wind size={14} /> {t.kpiMaxVel}
+              </div>
+              <div className="kpi-value">
+                {kpis ? `${kpis.max_velocity_ms.toFixed(2)} m/s` : '--'}
+              </div>
             </div>
-            <div className="kpi-value">
-              {kpis ? `${kpis.max_velocity_ms.toFixed(2)} m/s` : '--'}
-            </div>
-          </div>
 
-          <div className="kpi-card">
-            <div className="kpi-label">
-              <Cpu size={14} /> {t.kpiMesh}
+            <div className="kpi-card">
+              <div className="kpi-label">
+                <Cpu size={14} /> {t.kpiMesh}
+              </div>
+              <div className="kpi-value">
+                {kpis ? `${kpis.n_cells.toLocaleString()} cells · ${kpis.iterations} it` : '--'}
+              </div>
             </div>
-            <div className="kpi-value">
-              {kpis ? `${kpis.n_cells.toLocaleString()} cells · ${kpis.iterations} it` : '--'}
-            </div>
-          </div>
 
-          <div className="kpi-card">
-            <div className="kpi-label">
-              {result?.cached ? <Database size={14} /> : <Timer size={14} />}
-              {result?.cached ? t.kpiCacheHit : t.kpiSolveTime}
-            </div>
-            <div className={`kpi-value ${result?.cached ? 'accent-green' : 'accent-sky'}`}>
-              {result
-                ? result.cached
-                  ? t.hitLabel(timing?.total.toFixed(1) ?? '0.0')
-                  : `${timing?.total.toFixed(1)} s`
-                : '--'}
+            <div className="kpi-card">
+              <div className="kpi-label">
+                {result?.cached ? <Database size={14} /> : <Timer size={14} />}
+                {result?.cached ? t.kpiCacheHit : t.kpiSolveTime}
+              </div>
+              <div className={`kpi-value ${result?.cached ? 'accent-green' : 'accent-sky'}`}>
+                {result
+                  ? result.cached
+                    ? t.hitLabel(timing?.total.toFixed(1) ?? '0.0')
+                    : `${timing?.total.toFixed(1)} s`
+                  : '--'}
+              </div>
             </div>
           </div>
         </header>
