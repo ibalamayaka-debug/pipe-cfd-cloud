@@ -59,8 +59,6 @@ export const App: React.FC = () => {
     }
   }, [lang, t.pageTitle]);
 
-  const toggleLang = () => setLang((prev) => (prev === 'zh' ? 'en' : 'zh'));
-
   const handleRun = async (overrideParams?: PipeParams) => {
     const target = overrideParams ?? params;
     setLoading(true);
@@ -113,7 +111,7 @@ export const App: React.FC = () => {
     <div className="app-layout">
       <ControlPanel
         lang={lang}
-        onToggleLang={toggleLang}
+        onSetLang={setLang}
         params={params}
         onParamsChange={setParams}
         view={view}

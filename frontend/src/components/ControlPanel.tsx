@@ -1,11 +1,11 @@
 import React from 'react';
-import { Play, Sliders, Eye, Sparkles, Droplets, Globe } from 'lucide-react';
+import { Play, Sliders, Eye, Sparkles, Droplets } from 'lucide-react';
 import { TRANSLATIONS, type Lang } from '../i18n';
 import type { ColorMapPreset, FieldName, PipeParams, ViewSettings } from '../types';
 
 interface ControlPanelProps {
   lang: Lang;
-  onToggleLang: () => void;
+  onSetLang: (lang: Lang) => void;
   params: PipeParams;
   onParamsChange: (p: PipeParams) => void;
   view: ViewSettings;
@@ -23,7 +23,7 @@ const FLUID_PRESETS = [
 
 export const ControlPanel: React.FC<ControlPanelProps> = ({
   lang,
-  onToggleLang,
+  onSetLang,
   params,
   onParamsChange,
   view,
@@ -41,15 +41,22 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
       <div className="brand">
         <div className="brand-top-row">
           <div className="brand-badge">CF + Modal + OpenFOAM</div>
-          <button
-            type="button"
-            className="lang-toggle"
-            onClick={onToggleLang}
-            title={lang === 'zh' ? 'Switch to English' : '切换为中文'}
-          >
-            <Globe size={12} />
-            <span>{lang === 'zh' ? 'EN' : '中文'}</span>
-          </button>
+          <div className="lang-switch" role="group" aria-label="Language">
+            <button
+              type="button"
+              className={lang === 'zh' ? 'active' : ''}
+              onClick={() => onSetLang('zh')}
+            >
+              中文
+            </button>
+            <button
+              type="button"
+              className={lang === 'en' ? 'active' : ''}
+              onClick={() => onSetLang('en')}
+            >
+              EN
+            </button>
+          </div>
         </div>
         <h1>PipeCFD Cloud</h1>
         <p>{t.subtitle}</p>

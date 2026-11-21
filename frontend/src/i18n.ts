@@ -2,6 +2,9 @@ export type Lang = 'zh' | 'en';
 
 export function detectInitialLang(): Lang {
   try {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('lang');
+    if (q === 'zh' || q === 'en') return q;
     const saved = localStorage.getItem('pipecfd_lang');
     if (saved === 'zh' || saved === 'en') return saved;
   } catch {
